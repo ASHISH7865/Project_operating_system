@@ -1,0 +1,122 @@
+#include<stdio.h>
+
+struct Process{
+	int pid,arrivalTime,BurstTime,end_time,priority;
+};
+
+/*Swapping Process p1 and p2  if condition satisfied*/
+
+void swap(struct Process* p1,struct Process* p2) { 
+    struct Process temp = *p1; 
+    *p1 = *p2; 
+    *p2 = temp; 
+} 
+
+/*QuickSort algorithm*/
+
+int partition (struct Process rqueue[], int low, int high) 
+{ 
+    int pivot = rqueue[high].priority;    // pivot taking as the priority of the last process in the array strucure
+    int i = (low - 1),j; 
+		  
+    for (j = low; j <= high- 1; j++) { 
+    	/*If the priority is greater swapping is done,otherwise continues 
+		  if the process having same priority then with recently selected is not executed*/
+    	
+        if (rqueue[j].priority > pivot || (rqueue[i].priority == rqueue[j].priority && rqueue[i].end_time > rqueue[j].end_time)) { 
+            i++; 
+            swap(&rqueue[i], &rqueue[j]); 
+        } 
+    } 
+    swap(&rqueue[i + 1], &rqueue[high]); 
+    return (i + 1); 
+} 
+  
+/*Driver program for quicksort*/
+void quickSort(struct Process rqueue[], int low, int high) 
+{ 
+    if (low < high) { 
+        int pi = partition(rqueue, low, high); 
+        quickSort(rqueue, low, pi - 1); 
+        quickSort(rqueue, pi + 1, high); 
+    } 
+} 
+/*Preempitive priority scheduler and execution done within the scheduler*/
+
+void process_execute(struct Process process[],int No_Of_Process)
+{
+	struct Process ready_queue[No_Of_Process];
+	int i,j,rqcount=0,burst = 0,sum=0;
+		printf("\nREADY QUEUE\t\t    Burst Time\t     priority\n");
+	while(No_Of_Process !=0 ){
+	
+		for(i=0;i<No_Of_Process;i++){
+			/*If process is already been in ready_queue then it will not be added
+			  If a process arrives matches with cpu clock it will added to ready_queue*/
+			if(burst == process[i].arrivalTime){  
+				ready_queue[rqcount] = process[i];
+				rqcount++;
+				
+			}
+		}
+		
+		quickSort(ready_queue,0,rqcount-1);	//Sorting queue according to their priority
+	
+	//For checking the execution order
+	//printf("%d %d %d %d %d\n",ready_queue[0].pid,ready_queue[0].arrivalTime,ready_queue[0].BurstTime,ready_queue[0].priority); 
+
+	/* 	For checking the status of the ready queue at particular time */
+
+	for(i=0;i<rqcount;i++)
+		printf("%d\t\t\t\t%d\t\t%d  \n",ready_queue[i].pid,ready_queue[i].BurstTime,ready_queue[i].priority);
+	
+		/*Cpu is allocated and Process execution start*/	
+		ready_queue[0].BurstTime--;
+		ready_queue[0].end_time = burst;
+		ready_queue[0].priority += 1;
+		
+		/*Every other waiting in ready_queue will be incremented with 2 in the priority*/
+		for(j=1;j<rqcount;j++)
+			ready_queue[j].priority += 2;
+	
+		/*If First process of ready_queue is completed it will out of the memory*/
+		if(ready_queue[0].BurstTime == 0){
+			sum += (ready_queue[0].end_time-ready_queue[0].arrivalTime-process[ready_queue[0].pid-1].BurstTime)+1; // 1 bcz burst is incremented after
+			--No_Of_Process;
+			for(j=0;j<rqcount-1;j++)	
+				ready_queue[j] = ready_queue[j+1];
+			rqcount--;
+		}
+		
+		
+		burst++;
+		
+	}
+	printf("Average Waiting time for each process is %4f: ",(float)sum/No_Of_Process);			
+}
+
+int main()
+{
+	int i,No_Of_Process;	
+	/* Process creation */
+	
+	printf("Enter no. of process to create & PID should be different : ");		
+	scanf("%d",&No_Of_Process);
+	struct Process process[No_Of_Process];
+
+	/* Process intiation */
+
+	for(i=0;i<No_Of_Process;i++){
+		printf("Enter details of process %d  ",i+1);
+		printf("\nenter pid");
+		scanf("%d",&process[i].pid);
+		printf("\nenter arrival time    ");
+		scanf("%d",&process[i].arrivalTime);
+		printf("\nenter burst time    ");
+		scanf("%d",&process[i].BurstTime);
+		process[i].end_time = process[i].priority = 0;	
+	}	
+
+	process_execute(process,No_Of_Process);
+	return 0;
+}
